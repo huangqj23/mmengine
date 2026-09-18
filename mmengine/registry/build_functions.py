@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from mmengine.config import Config, ConfigDict
 from mmengine.utils import ManagerMixin, digit_version
 from .registry import Registry
+from .cfg_type import cfg_type_matches
 
 if TYPE_CHECKING:
     import torch.nn as nn
@@ -240,7 +241,7 @@ def build_optimizer_from_cfg(
 
     from ..logging import print_log
     if 'type' in cfg \
-            and 'Adafactor' == cfg['type'] \
+            and cfg_type_matches(cfg['type'], 'Adafactor') \
             and digit_version(torch.__version__) >= digit_version('2.5.0'):
         print_log(
             'the torch version of Adafactor is registered as TorchAdafactor')

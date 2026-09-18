@@ -19,6 +19,7 @@ from mmengine.logging import MMLogger
 from mmengine.model.wrappers import is_model_wrapper
 from mmengine.optim import (BaseOptimWrapper, OptimWrapperDict,
                             _ParamScheduler, build_optim_wrapper)
+from mmengine.registry import cfg_type_name
 from mmengine.registry import MODELS, OPTIM_WRAPPERS, PARAM_SCHEDULERS
 from mmengine.utils import digit_version
 from mmengine.utils.dl_utils import (TORCH_VERSION, collect_env,
@@ -556,7 +557,8 @@ class BaseStrategy(metaclass=ABCMeta):
                     default_end = max_iters
                 _scheduler.setdefault('end', default_end)
                 self.logger.debug(
-                    f'The `end` of {_scheduler["type"]} is not set. '
+                    f'The `end` of {cfg_type_name(_scheduler["type"])} '
+                    'is not set. '
                     'Use the max epochs/iters of train loop as default.')
 
                 param_schedulers.append(

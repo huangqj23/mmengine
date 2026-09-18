@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import inspect
+import weakref
 import logging
 import sys
 from collections.abc import Callable
@@ -74,6 +75,11 @@ class Registry:
     https://mmengine.readthedocs.io/en/latest/advanced_tutorials/registry.html.
     """
 
+    # Bumped on every registration / registry creation; lets
+    # ``cfg_type.registered_names`` know when its alias index is stale.
+    _version: int = 0
+    _instances: 'weakref.WeakSet' = weakref.WeakSet()
+
     def __init__(self,
                  name: str,
                  build_func: Optional[Callable] = None,
@@ -85,6 +91,8 @@ class Registry:
         self._module_dict: Dict[str, Type] = dict()
         self._children: Dict[str, 'Registry'] = dict()
         self._locations = locations
+        Registry._instances.add(self)
+        Registry._version += 1
         self._imported = False
 
         if scope is not None:
@@ -438,9 +446,18 @@ class Registry:
         from ..logging import print_log
 
         if not isinstance(key, str):
+            # Pure-Python style configs pass the class/function itself as
+            # ``type``; return it unchanged so that callers doing
+            # ``registry.get(cfg['type'])`` accept both spellings.
+            from mmengine.config.lazy import LazyAttr, LazyObject
+            if isinstance(key, (LazyObject, LazyAttr)):
+                key = key.build()
+            if callable(key):
+                self.import_from_location()
+                return key
             raise TypeError(
-                'The key argument of `Registry.get` must be a str, '
-                f'got {type(key)}')
+                'The key argument of `Registry.get` must be a str or a '
+                f'class/function, got {type(key)}')
 
         scope, real_key = self.split_scope_key(key)
         obj_cls = None
@@ -611,6 +628,7 @@ class Registry:
                 raise KeyError(f'{name} is already registered in {self.name} '
                                f'at {existed_module.__module__}')
             self._module_dict[name] = module
+            Registry._version += 1
 
     def register_module(
             self,

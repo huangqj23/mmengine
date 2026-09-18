@@ -2,6 +2,7 @@
 import ast
 import copy
 import difflib
+import inspect
 import os
 import os.path as osp
 import platform
@@ -55,6 +56,11 @@ def _lazy2string(cfg_dict, dict_type=None):
         return type(cfg_dict)(_lazy2string(v, dict_type) for v in cfg_dict)
     elif isinstance(cfg_dict, (LazyAttr, LazyObject)):
         return f'{cfg_dict.module}.{str(cfg_dict)}'
+    elif inspect.isclass(cfg_dict) or inspect.isfunction(cfg_dict):
+        # A real class/function (e.g. ``type=ResNet`` assigned at runtime):
+        # flatten it the same way as a LazyObject so that ``pretty_text`` and
+        # ``dump`` never emit ``<class '...'>``.
+        return f'{cfg_dict.__module__}.{cfg_dict.__qualname__}'
     else:
         return cfg_dict
 
@@ -1391,6 +1397,8 @@ class Config:
         def _format_basic_types(k, v, use_mapping=False):
             if isinstance(v, str):
                 v_str = repr(v)
+            elif inspect.isclass(v) or inspect.isfunction(v):
+                v_str = repr(f'{v.__module__}.{v.__qualname__}')
             else:
                 v_str = str(v)
 

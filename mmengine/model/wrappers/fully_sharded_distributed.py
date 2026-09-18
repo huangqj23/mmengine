@@ -184,7 +184,7 @@ class MMFullyShardedDataParallel(FullyShardedDataParallel):
                     raise ValueError('`param_init_fn` is not registered!')
             elif isinstance(param_init_fn, dict):
                 init_fn = param_init_fn.pop('type')
-                if isinstance(param_init_fn, str):
+                if isinstance(init_fn, str):
                     init_fn = FUNCTIONS.get(init_fn)  # type: ignore
                 if init_fn is None:
                     raise ValueError('`param_init_fn` is not registered!')

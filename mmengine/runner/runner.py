@@ -33,6 +33,7 @@ from mmengine.model.efficient_conv_bn_eval import \
     turn_on_efficient_conv_bn_eval
 from mmengine.optim import (OptimWrapper, OptimWrapperDict, _ParamScheduler,
                             build_optim_wrapper)
+from mmengine.registry import cfg_type_name
 from mmengine.registry import (DATA_SAMPLERS, DATASETS, EVALUATOR, FUNCTIONS,
                                HOOKS, LOG_PROCESSORS, LOOPS, MODEL_WRAPPERS,
                                MODELS, OPTIM_WRAPPERS, PARAM_SCHEDULERS,
@@ -1172,7 +1173,8 @@ class Runner:
                         'by_epoch', True) else self.max_iters
                     _scheduler.setdefault('end', default_end)
                     self.logger.debug(
-                        f'The `end` of {_scheduler["type"]} is not set. '
+                        f'The `end` of {cfg_type_name(_scheduler["type"])} '
+                        'is not set. '
                         'Use the max epochs/iters of train loop as default.')
 
                 param_schedulers.append(

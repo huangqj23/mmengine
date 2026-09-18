@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import inspect
 import logging
 from abc import ABCMeta
 from collections import defaultdict
@@ -10,6 +11,7 @@ import torch.nn as nn
 
 from mmengine.dist import master_only
 from mmengine.logging import MMLogger, print_log
+from mmengine.registry import cfg_type_matches
 from .weight_init import PretrainedInit, initialize, update_init_info
 from .wrappers.utils import is_model_wrapper
 
@@ -120,8 +122,10 @@ class BaseModule(nn.Module, metaclass=ABCMeta):
                 pretrained_cfg = []
                 for init_cfg in init_cfgs:
                     assert isinstance(init_cfg, dict)
-                    if (init_cfg['type'] == 'Pretrained'
-                            or init_cfg['type'] is PretrainedInit):
+                    init_type = init_cfg['type']
+                    if (cfg_type_matches(init_type, 'Pretrained')
+                            or (inspect.isclass(init_type)
+                                and issubclass(init_type, PretrainedInit))):
                         pretrained_cfg.append(init_cfg)
                     else:
                         other_cfgs.append(init_cfg)
