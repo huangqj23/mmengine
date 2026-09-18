@@ -7,8 +7,8 @@ from mmengine.config.lazy import LazyObject
 from mmengine.model.weight_init import PretrainedInit
 from mmengine.utils.dl_utils.parrots_wrapper import SyncBatchNorm
 from mmengine.registry import (MODELS, Registry, cfg_type_matches,
-                               cfg_type_name, registered_names,
-                               resolve_cfg_type)
+                               cfg_type_name, is_import_path,
+                               registered_names, resolve_cfg_type)
 
 
 @pytest.fixture(autouse=True)
@@ -107,3 +107,18 @@ def test_pretty_text_with_real_class():
     assert "'torch.nn.modules.activation.ReLU'" in text
     assert '<class' not in text
     assert cfg.to_dict()['a']['type'] == 'torch.nn.modules.activation.ReLU'
+
+
+def test_import_path_strings():
+    # how Config.dump writes a class ``type``
+    assert is_import_path('mmengine.model.PretrainedInit')
+    assert not is_import_path('mmdet.Mosaic')
+    assert not is_import_path('Pretrained')
+    assert not is_import_path(None)
+    assert not is_import_path(nn.ReLU)
+    # named like the class itself
+    assert cfg_type_name('mmengine.model.PretrainedInit') == 'Pretrained'
+    assert cfg_type_name('torch.nn.BatchNorm2d') == 'BN'
+    # scope-prefixed names and unimportable paths stay as they are
+    assert cfg_type_name('mmdet.Mosaic') == 'mmdet.Mosaic'
+    assert cfg_type_name('no.such.module.Thing') == 'no.such.module.Thing'

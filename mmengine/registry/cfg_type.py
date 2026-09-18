@@ -23,7 +23,7 @@ from typing import Any, Dict, Optional, Tuple
 
 __all__ = [
     'cfg_type_matches', 'cfg_type_name', 'resolve_cfg_type',
-    'registered_names'
+    'registered_names', 'is_import_path'
 ]
 
 # id(obj) -> (obj, names).  ``obj`` is kept so that the id cannot be reused.
@@ -83,11 +83,17 @@ def registered_names(obj: Any) -> Tuple[str, ...]:
     return entry[1]
 
 
-def _is_module_path(s: str) -> bool:
-    """``'pkg.mod.Name'`` (>= 2 dots), as produced by ``Config.dump`` for a
-    class ``type``.  ``'scope.Name'`` is *not* a module path: scope-prefixed
-    registered names keep plain string semantics."""
-    return s.count('.') >= 2
+def is_import_path(t: Any) -> bool:
+    """Whether ``t`` is an import path string such as ``'mmcv.ops.nms'``.
+
+    That is how ``Config.dump`` writes a ``type`` given as a class/function
+    (``'pkg.module.Name'``, at least two dots).  ``'scope.Name'`` is *not* an
+    import path: scope-prefixed registered names keep plain string semantics.
+    """
+    return isinstance(t, str) and t.count('.') >= 2
+
+
+_is_module_path = is_import_path
 
 
 def _resolve_module_path(s: str) -> Optional[Any]:
@@ -148,13 +154,17 @@ def cfg_type_matches(t: Any, *names: Any) -> bool:
 def cfg_type_name(t: Any) -> str:
     """A stable string name for logging / dict keys.
 
-    Strings are returned unchanged.  For a class the first registered name in
-    the current default scope is preferred, then the first root-registry
-    name, then ``__name__``.
+    Strings are returned unchanged, except import paths (how ``Config.dump``
+    writes a class ``type``), which are named like the class.  For a class
+    the first registered name in the current default scope is preferred,
+    then the first root-registry name, then ``__name__``.
     """
     t = _build_lazy(t)
     if isinstance(t, str):
-        return t
+        obj = _resolve_module_path(t) if is_import_path(t) else None
+        if obj is None:
+            return t
+        t = obj
     if t is None:
         return 'None'
     names = registered_names(t)

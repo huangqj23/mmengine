@@ -26,7 +26,7 @@ from mmengine.model import BaseDataPreprocessor, is_model_wrapper
 from mmengine.optim import (AmpOptimWrapper, BaseOptimWrapper, OptimWrapper,
                             OptimWrapperDict, _ParamScheduler,
                             build_optim_wrapper)
-from mmengine.registry import cfg_type_name
+from mmengine.registry import cfg_type_matches, cfg_type_name
 from mmengine.registry import (FUNCTIONS, MODEL_WRAPPERS, OPTIM_WRAPPERS,
                                PARAM_SCHEDULERS, STRATEGIES, Registry)
 from mmengine.utils import get_git_hash, mkdir_or_exist
@@ -549,9 +549,8 @@ class FSDPStrategy(DDPStrategy):
             # optimizer must be defined for single optimizer training.
             optimizer = optim_wrapper.get('optimizer', None)
             optim_wrapper.setdefault('type', 'OptimWrapper')
-            if optim_wrapper.get('type',
-                                 'AmpOptimWrapper') in ('AmpOptimWrapper',
-                                                        AmpOptimWrapper):
+            if cfg_type_matches(optim_wrapper['type'], 'AmpOptimWrapper',
+                                AmpOptimWrapper):
                 optim_wrapper.setdefault('use_fsdp', True)
 
             # If optimizer is a built `Optimizer` instance, the optimizer

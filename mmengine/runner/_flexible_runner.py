@@ -22,7 +22,8 @@ from mmengine.logging import MessageHub, print_log
 from mmengine.optim import OptimWrapper, OptimWrapperDict, _ParamScheduler
 from mmengine.registry import (DATA_SAMPLERS, DATASETS, EVALUATOR, FUNCTIONS,
                                HOOKS, LOG_PROCESSORS, LOOPS, RUNNERS,
-                               STRATEGIES, VISUALIZERS, DefaultScope)
+                               STRATEGIES, VISUALIZERS, DefaultScope,
+                               cfg_type_matches)
 from mmengine.utils import digit_version
 from mmengine.utils.dl_utils import TORCH_VERSION
 from mmengine.visualization import Visualizer
@@ -637,11 +638,7 @@ class FlexibleRunner:
             assert isinstance(strategy, dict)
 
             # train_micro_batch_size_per_gpu is required by DeepSpeed
-            if isinstance(strategy['type'], str):
-                strategy_name = strategy['type']
-            else:
-                strategy_name = strategy['type'].__name__
-            if strategy_name == 'DeepSpeedStrategy':
+            if cfg_type_matches(strategy['type'], 'DeepSpeedStrategy'):
                 if self._train_dataloader is None:
                     strategy['train_micro_batch_size_per_gpu'] = 1
                 else:
